@@ -8,7 +8,9 @@
             <whiteboard></whiteboard>
           </el-main>
         </el-container>
-        <el-aside>房间人员列表/聊天列表</el-aside>
+        <el-aside>
+          房间人员列表/聊天列表
+        </el-aside>
       </el-container>
     </el-container>
   </div>
@@ -24,29 +26,20 @@ import Whiteboard from "./whiteboard.vue";
 .container {
   height: 100%;
 
-  &.el-header {
-    border-bottom: 1px solid #999;
-  }
-
   & > .el-container {
     height: 100%;
-
-
-    &.el-aside {
-      width: 100px;
-    }
-
-    //& > .el-aside {
-    //  height: 100%;
-    //  background: #545c64;
-    //}
-    //
-    //& > .el-container {
-    //  & > .el-header {
-    //    padding: 0%;
-    //  }
-    //}
   }
+}
+
+header.el-header {
+  border-bottom: 1px solid #999;
+}
+
+.el-aside {
+  border-left: 1px #999 solid;
+}
+.el-main{
+  padding: 0;
 }
 
 </style>

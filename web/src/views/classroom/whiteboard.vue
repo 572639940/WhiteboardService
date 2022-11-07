@@ -2,34 +2,80 @@
   <div class="container" ref="container">
     <canvas id="canvas" ref="canvas">
     </canvas>
-    <div class="toolbar">
+    <div class="toolbar" v-if="!isMouseDown">
       <el-row>
-        <el-col :span="12">
-          <el-radio-group v-model="currentType">
-            <el-radio-button label="selection">选择</el-radio-button>
-            <el-radio-button label="rectangle">矩形</el-radio-button>
-          </el-radio-group>
-        </el-col>
-        <el-col :span="6">
-          <el-button @click="testSaveData">save</el-button>
-          <el-button @click="testLoadData">load</el-button>
-        </el-col>
-        <el-col :span="6">
-          <div>
-            <el-button v-if="drawingBoardIndex<=0" disabled>上一个</el-button>
-            <el-button v-else @click="prev">上一个</el-button>
-            <el-button disabled link> {{ drawingBoardIndex + 1 }}</el-button>
-            <el-button v-if="drawingBoardIndex+1===drawingBoardList.length" @click="adddrawingBoard">添加</el-button>
-            <el-button v-else @click="next">下一个</el-button>
-          </div>
-        </el-col>
+        <el-radio-group v-model="currentType">
+          <el-radio-button label="selection">选择</el-radio-button>
+          <el-radio-button label="rectangle">矩形</el-radio-button>
+        </el-radio-group>
       </el-row>
+    </div>
+    <!-- todo 修改样式时显示 -->
+    <el-card class="element-style" v-if="!isMouseDown">
+      <el-row>
+        <el-button @click="testSaveData">save</el-button>
+        <el-button @click="testLoadData">load</el-button>
+        <el-button circle :icon="DeleteFilled" size="small"/>
+      </el-row>
+    </el-card>
+    <div class="canvas-page" v-if="!isMouseDown">
+      <el-icon>
+        <el-tooltip
+            class="box-item"
+            effect="dark"
+            content="上一页"
+            placement="top"
+        >
+          <el-button
+              v-if="drawingBoardIndex<=0"
+              circle
+              size="small"
+              disabled
+              :icon="CaretLeft"
+          />
+          <el-button
+              v-else
+              circle
+              size="small"
+              :icon="CaretLeft"
+              @click="prev"/>
+        </el-tooltip>
+        <el-button disabled link> {{ drawingBoardIndex + 1 }}</el-button>
+        <el-tooltip
+            v-if="drawingBoardIndex+1===drawingBoardList.length"
+            class="box-item"
+            effect="dark"
+            content="添加"
+            placement="top"
+        >
+          <el-button
+              circle
+              size="small"
+              :icon="Plus"
+              @click="adddrawingBoard"/>
+        </el-tooltip>
+        <el-tooltip
+            v-else
+            class="box-item"
+            effect="dark"
+            content="下一页"
+            placement="top"
+        >
+          <el-button
+              circle
+              size="small"
+              :icon="CaretRight"
+              @click="next">
+          </el-button>
+        </el-tooltip>
+      </el-icon>
     </div>
   </div>
 </template>
 
 <script setup>
 import {onMounted, onUpdated, ref} from "vue";
+import {DeleteFilled, CaretLeft, CaretRight, Plus} from "@element-plus/icons-vue"
 
 import {getPointToLineDistance, getTowPointDistance, checkIsAtSegment} from "../../js/utils.js";
 
@@ -40,7 +86,9 @@ const canvas = ref(null)
 let ctx = null
 
 let mouseDown = {x: 0, y: 0}// 鼠标位置
-let isMouseDown = false;// 鼠标是否按下
+let isMouseDown = ref(false);// 鼠标是否按下
+
+import {Delete, Edit, Search, Share, Upload} from '@element-plus/icons-vue'
 
 // 当前激活模式
 const currentType = ref('rectangle')
@@ -55,7 +103,6 @@ let hitActiveElementArea = "" // 当前激活的区域
 onMounted(() => {
   initCanvas()
   bindEvent()
-  // testLoadData()
 })
 
 /**
@@ -63,12 +110,10 @@ onMounted(() => {
  */
 const initCanvas = () => {
   let {width, height} = container.value.getBoundingClientRect();
-  console.log(width)
-  console.log(height)
   canvas.value.width = width
-  canvas.value.height = height*0.9
+  canvas.value.height = height
   ctx = canvas.value.getContext('2d')
-  ctx.translate(width / 2, height / 2)
+  // ctx.translate(width / 2, height / 2)
 }
 
 /**
@@ -81,25 +126,37 @@ const bindEvent = () => {
 }
 
 const onmousedown = (e) => {
-  mouseDown.x = e.clientX
-  mouseDown.y = e.clientY
-  isMouseDown = true
+  // 左键事件
+  if (e.button !== 0) {
+    return
+  }
+  // 在 canvas 中的坐标
+  mouseDown.x = e.offsetX
+  mouseDown.y = e.offsetY
+  isMouseDown.value = true
 
-  if (currentType.value === 'selection') {
+  if (currentType.value === "selection") {
     // 选择模式下进行元素激活检测
-    // checkIsHitElement(mouseDown.x, mouseDown.y);
     if (activeElement) {
-      let hitActiveArea = activeElement.isHitActiveArea(mouseDown.x, mouseDown.y)
+      // 当前存在激活元素则判断是否按住了激活状态的某个区域
+      let hitActiveArea = activeElement.isHitActiveArea(mouseDown.x, mouseDown.y);
       if (hitActiveArea) {
-        isAdjustmentElement = true
-        hitActiveArea = hitArea
+        // 按住了按住了激活状态的某个区域
+        isAdjustmentElement = true;
+        hitActiveElementArea = hitArea;
+        alert(hitActiveArea);
+      } else {
+        // 否则进行激活元素的更新操作
+        checkIsHitElement(mouseDown.x, mouseDown.y);
       }
+    } else {
+      checkIsHitElement(mouseDown.x, mouseDown.y);
     }
   }
-}
+};
 
 const onmouseup = (e) => {
-  isMouseDown = false
+  isMouseDown.value = false
   if (currentType.value !== "selection") {
     activeElement = null
   }
@@ -108,7 +165,7 @@ const onmouseup = (e) => {
 
 const onmousemove = (e) => {
   // 可以绘制, 且不是选中
-  if (!isMouseDown || currentType.value === 'selection') {
+  if (!isMouseDown.value || currentType.value === 'selection') {
     return;
   }
   if (!activeElement) {
@@ -120,11 +177,11 @@ const onmousemove = (e) => {
     allElements.push(activeElement)
   }
   // 更改矩阵的大小
-  activeElement.width = e.clientX - mouseDown.x
-  activeElement.height = e.clientY - mouseDown.y
+  activeElement.width = e.offsetX - mouseDown.x
+  activeElement.height = e.offsetY - mouseDown.y
   // 渲染所有的元素
   renderAllElements()
-  testSaveData()
+  // testSaveData()
 }
 
 // 矩阵
@@ -240,12 +297,9 @@ const drawCircle = (x, y, r) => {
   ctx.stroke();
 };
 
-// 鼠标,画布圆点不一致
+// 屏幕坐标转到画布坐标
 const screenToCanvas = (x, y) => {
-  return {
-    x: x - canvas.value.width / 2,
-    y: y - canvas.value.height / 2
-  }
+  return {x, y}
 }
 
 /**
@@ -254,6 +308,7 @@ const screenToCanvas = (x, y) => {
 const clearCanvas = () => {
   let width = canvas.value.width;
   let height = canvas.value.height;
+  ctx.clearRect(0, 0, width, height)
   ctx.clearRect(-width / 2, -height / 2, width, height)
 }
 
@@ -290,6 +345,7 @@ const checkPointIsInRectangle = (x, y, rx, ry, rw, rh) => {
   return x => rx && x <= rx + rw && y >= ry && y <= ry + rh;
 }
 
+// 模拟交互存储
 let key = "allElement"
 
 const testSaveData = () => {
@@ -314,7 +370,7 @@ let drawingBoardList = [[]]
 const canNext = () => {
   // 不能超出最大画板数
   if (drawingBoardIndex.value + 1 >= drawingBoardList.length) {
-    console.log('太大了')
+    console.debug('太大了')
     return false
   }
   return true
@@ -324,7 +380,7 @@ const canNext = () => {
  */
 const canPrev = () => {
   if (drawingBoardIndex.value <= 0) {
-    console.log('太小了')
+    console.debug('太小了')
     return false
   }
   return true
@@ -341,8 +397,6 @@ const prev = () => {
   // testSaveData()
   //
   drawingBoardIndex.value--
-  console.log(drawingBoardIndex.value)
-  console.log(drawingBoardList[drawingBoardIndex.value])
   allElements = drawingBoardList[drawingBoardIndex.value]
   renderAllElements()
 }
@@ -365,7 +419,6 @@ const next = () => {
   // testSaveData()
 
   drawingBoardIndex.value++
-  console.log(drawingBoardIndex.value)
   allElements = drawingBoardList[drawingBoardIndex.value]
   renderAllElements()
 }
@@ -392,16 +445,36 @@ const adddrawingBoard = () => {
 
 <style lang="less" scoped>
 .container {
-  /*position: relative;*/
   width: 100%;
   height: 100%;
-  /*position: fixed;*/
-  /*left: 0;*/
-  /*top: 0;*/
-  /*width: 100%;*/
-  /*height: 80%;*/
 }
-#canvas{
-  /*height: 600px;*/
+
+#canvas {
+  width: 100%;
+  height: 99%;
+  //border-bottom: 1px solid #666;
+}
+
+// 选择工具栏
+.toolbar {
+  position: absolute;
+
+  bottom: 70px;
+  left: 30px;
+}
+
+// 样式调整栏
+.element-style {
+  position: absolute;
+
+  top: 100px;
+  left: 30px;
+}
+
+.canvas-page {
+  position: absolute;
+
+  right: 360px;
+  bottom: 70px;
 }
 </style>

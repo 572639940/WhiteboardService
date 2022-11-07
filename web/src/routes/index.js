@@ -25,6 +25,10 @@ export const constantRoutes = [
         path: '/classroom',
         component: ()=>import('../views/classroom/index.vue'),
     },
+    {
+        path: '/classroom1',
+        component: ()=>import('../views/classroom/whiteboard.vue'),
+    },
 ]
 
 const router = createRouter({
