@@ -1,6 +1,8 @@
 package com.whiteboard.service;
 
+import com.whiteboard.common.excetion.BusinessException;
 import com.whiteboard.model.domain.UserDO;
+import java.util.Map;
 
 /**
  * <p>
@@ -23,5 +25,14 @@ public interface IUserService {
      * @return user
      */
     UserDO getAdminByUsername(String username);
+
+    /**
+     * <p>
+     * 用户登陆
+     * </p>
+     * 
+     * @return map
+     */
+    Map<String, Object> login(String username,String password) throws BusinessException;
 
 }
