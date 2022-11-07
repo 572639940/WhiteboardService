@@ -13,6 +13,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.util.Assert;
 
 import javax.annotation.Resource;
 import java.util.HashMap;
@@ -54,6 +55,8 @@ public class UserServiceImpl implements IUserService {
 
     @Override
     public Map<String, Object> login(String username, String password) throws BusinessException {
+        Assert.hasText("username", "username must not be null");
+        Assert.hasText("password", "password must not be null");
         UserDetails userDetails = userDetailsService.loadUserByUsername(username);
         if (null == userDetails || !passwordEncoder.matches(password, userDetails.getPassword())) {
 

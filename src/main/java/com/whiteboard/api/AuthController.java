@@ -1,6 +1,7 @@
 package com.whiteboard.api;
 
 import com.whiteboard.common.excetion.BusinessException;
+import com.whiteboard.model.form.AuthUserForm;
 import com.whiteboard.service.IUserService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -28,10 +29,10 @@ public class AuthController {
     @Autowired
     private IUserService userService;
 
-    @ApiOperation(value = "测试 swwager")
+    @ApiOperation(value = "登陆")
     @RequestMapping("/login")
-    public Map<String, Object> login() throws BusinessException {
-        return userService.login("admin", "1234");
+    public Map<String, Object> login(AuthUserForm authUserForm) throws BusinessException {
+        return userService.login(authUserForm.getUsername(), authUserForm.getPassword());
     }
 
 }
