@@ -83,9 +83,6 @@ import {getPointToLineDistance, getTowPointDistance, checkIsAtSegment, checkPoin
 
 import {loadInStore, saveToStorage} from "../../js/data.js";
 
-import _ from 'lodash'
-
-
 const container = ref(null)
 const canvas = ref(null)
 let ctx = null
@@ -118,7 +115,6 @@ const initCanvas = () => {
   canvas.value.width = width
   canvas.value.height = height
   ctx = canvas.value.getContext('2d')
-  // ctx.translate(width / 2, height / 2)
 }
 
 /**
@@ -167,8 +163,6 @@ const onmouseup = (e) => {
     activeElement = null
   }
   mouseDown.x = {x: 0, y: 0}
-  cacheListIndex += 1
-  cacheList[cacheListIndex] = _.cloneDeep(allElements)
 }
 
 const onmousemove = (e) => {
@@ -181,7 +175,7 @@ const onmousemove = (e) => {
       x: mouseDown.x,
       y: mouseDown.y,
     })
-    // 渲染所有元素
+    // 添加到元素渲染数组
     allElements.push(activeElement)
   }
   // 更改矩阵的大小
@@ -458,22 +452,22 @@ const adddrawingBoard = () => {
 }
 
 const undo = () => {
-  if (cacheList.length <= 0 || cacheListIndex <= -1) {
+  if (!allElements.length) {
     return
   }
+
   cacheListIndex -= 1
-  allElements = cacheListIndex !== -1 ? cacheList[cacheListIndex] : []
+  let element = allElements.pop()
+  cacheList.unshift(element)
 
   renderAllElements()
-  console.log(cacheListIndex)
-  console.log(cacheList)
 }
 const redo = () => {
-  if (cacheListIndex + 1 >= cacheList.length) {
+  if (!cacheList.length) {
     return
   }
-  cacheListIndex += 1
-  allElements = cacheList[cacheListIndex]
+  let element = cacheList.shift()
+  allElements.push(element)
   renderAllElements()
 }
 
