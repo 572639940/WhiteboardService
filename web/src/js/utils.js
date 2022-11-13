@@ -40,3 +40,34 @@ export const radToDeg = (rad) => {
 export const degToRad = (deg) => {
     return deg * (Math.PI / 180);
 };
+
+// /**
+//  * 检查一个坐标是否在一个矩阵内
+//  * @param x 鼠标点击x坐标
+//  * @param y 鼠标点击y坐标
+//  * @param rx 元素(左上角)x坐标
+//  * @param ry 元素(左上角)y坐标
+//  * @param rw 元素宽度
+//  * @param rh 元素高度
+//  * @return {boolean}
+//  */
+// const checkPointIsInRectangle = (x, y, rx, ry, rw, rh) => {
+//   console.log(`==========`)
+//   console.log(x >= rx)
+//   console.log(x <= rx + rw)
+//   console.log(y >= ry)
+//   console.log(y <= ry + rh)
+//   console.log(`==========`)
+//   return x >= rx && x <= rx + rw && y >= ry && y <= ry + rh;
+// }
+/**
+ * 检查一个坐标是否在一个矩阵内
+ * @param startPoint 判定区域左上角坐标{x,y}
+ * @param endPoint 判定区域右上角坐标{x,y}
+ * @param mousePoint 鼠标坐标
+ */
+export const checkPointIsInRectangle = (startPoint, endPoint, mousePoint) => {
+// scope
+    return mousePoint.x >= startPoint.x && mousePoint.y >= startPoint.y &&
+        mousePoint.x <= endPoint.x && mousePoint.y <= endPoint.y
+}

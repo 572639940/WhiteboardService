@@ -17,9 +17,13 @@ export const constantRoutes = [
     //     component: () => import(''),
     //     hidden: true
     // },
+    // {
+    //     path: '/',
+    //     component: ()=>import('../App.vue'),
+    // },
     {
         path: '/',
-        component: ()=>import('../App.vue'),
+        component: ()=>import('../views/Home.vue'),
     },
     {
         path: '/classroom',

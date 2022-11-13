@@ -1,7 +1,11 @@
 <template>
   <div class="container">
     <el-container>
-      <el-header>头部操作栏</el-header>
+      <el-header>
+        <router-link to="/">
+          <el-button>返回首页</el-button>
+        </router-link>
+      </el-header>
       <el-container>
         <el-container>
           <el-main>
@@ -38,7 +42,8 @@ header.el-header {
 .el-aside {
   border-left: 1px #999 solid;
 }
-.el-main{
+
+.el-main {
   padding: 0;
 }
 

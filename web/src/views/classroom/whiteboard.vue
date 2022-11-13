@@ -15,7 +15,9 @@
       <el-row>
         <el-button @click="testSaveData">save</el-button>
         <el-button @click="testLoadData">load</el-button>
-        <el-button circle :icon="DeleteFilled" size="small"/>
+        <el-button @click="undo">undo</el-button>
+        <el-button @click="redo">redo</el-button>
+        <el-button circle :icon="DeleteFilled" size="small" @click="clearCanvas"/>
       </el-row>
     </el-card>
     <div class="canvas-page" v-if="!isMouseDown">
@@ -77,7 +79,7 @@
 import {onMounted, onUpdated, ref} from "vue";
 import {DeleteFilled, CaretLeft, CaretRight, Plus} from "@element-plus/icons-vue"
 
-import {getPointToLineDistance, getTowPointDistance, checkIsAtSegment} from "../../js/utils.js";
+import {getPointToLineDistance, getTowPointDistance, checkIsAtSegment, checkPointIsInRectangle} from "../../js/utils.js";
 
 import {loadInStore, saveToStorage} from "../../js/data.js";
 
@@ -88,14 +90,14 @@ let ctx = null
 let mouseDown = {x: 0, y: 0}// 鼠标位置
 let isMouseDown = ref(false);// 鼠标是否按下
 
-import {Delete, Edit, Search, Share, Upload} from '@element-plus/icons-vue'
-
 // 当前激活模式
 const currentType = ref('rectangle')
-// const currentType = ref('selection')
 
 let activeElement = null// 当前激活
 let allElements = []// 所有元素
+// 元素缓存列表
+let cacheList = []
+let cacheListIndex = -1//当前绘图元素索引
 
 let isAdjustmentElement = false // 是否在调整区域
 let hitActiveElementArea = "" // 当前激活的区域
@@ -113,7 +115,6 @@ const initCanvas = () => {
   canvas.value.width = width
   canvas.value.height = height
   ctx = canvas.value.getContext('2d')
-  // ctx.translate(width / 2, height / 2)
 }
 
 /**
@@ -140,10 +141,11 @@ const onmousedown = (e) => {
     if (activeElement) {
       // 当前存在激活元素则判断是否按住了激活状态的某个区域
       let hitActiveArea = activeElement.isHitActiveArea(mouseDown.x, mouseDown.y);
+      console.log(hitActiveArea)
       if (hitActiveArea) {
         // 按住了按住了激活状态的某个区域
         isAdjustmentElement = true;
-        hitActiveElementArea = hitArea;
+        hitActiveElementArea = hitActiveArea;
         alert(hitActiveArea);
       } else {
         // 否则进行激活元素的更新操作
@@ -173,7 +175,7 @@ const onmousemove = (e) => {
       x: mouseDown.x,
       y: mouseDown.y,
     })
-    // 渲染所有元素
+    // 添加到元素渲染数组
     allElements.push(activeElement)
   }
   // 更改矩阵的大小
@@ -265,21 +267,32 @@ class Rectangle {
   isHitActiveArea(x0, y0) {
     let x = this.x - 5;
     let y = this.y - 5;
-
     let width = this.width + 10;
     let height = this.height + 10;
-    // todo 还有3个选中没有写
-    if (checkPointIsInRectangle(x0, y0, x, y, width, height)) {
-      // 在中间的虚线区域
-      return 'body'
-    } else if (getTowPointDistance(x0, y0, x + width / 2, y - 10) <= 10) {
-      // 旋转手柄
-      return 'rotate'
-    } else if (checkPointIsInRectangle(x0, y0, x + width, y + height, 10, 10)) {
-      // 右下角
-      return 'bottomRight'
-    }
 
+    let leftTopPoint = {x: x, y: y,}
+    let rightBottomPoint = {x: x + width, y: y + height,}
+    let mousePoint = {x: x0, y: y0}
+
+    if (checkPointIsInRectangle(leftTopPoint, rightBottomPoint, mousePoint)) {
+      // 在中间的虚线框
+      return "body";
+    } else if (getTowPointDistance(x0, y0, x + width / 2, y + 6) <= 15) {
+      // 在旋转手柄
+      return "rotate";
+    } else if (checkPointIsInRectangle(rightBottomPoint, {x: rightBottomPoint.x + 10, y: rightBottomPoint.y + 10}, mousePoint)) {
+      // 在右下角操作手柄
+      return "rightBottom";
+    } else if (checkPointIsInRectangle({x: rightBottomPoint.x, y: leftTopPoint.y}, {x: rightBottomPoint.x + 10, y: leftTopPoint.y + 10}, mousePoint)) {
+      // 在右上角操作手柄
+      return "rightTop";
+    } else if (checkPointIsInRectangle({x: leftTopPoint.x - 10, y: leftTopPoint.y - 10}, leftTopPoint, mousePoint)) {
+      // 在左上角操作手柄
+      return "leftTop";
+    } else if (checkPointIsInRectangle({x: leftTopPoint.x - 10, y: rightBottomPoint.y}, {x: leftTopPoint.x + 10, y: rightBottomPoint.y + 10}, mousePoint)) {
+      // 在左下角操作手柄
+      return "leftBottom";
+    }
   }
 }
 
@@ -299,7 +312,7 @@ const drawCircle = (x, y, r) => {
 
 // 屏幕坐标转到画布坐标
 const screenToCanvas = (x, y) => {
-  return {x, y}
+  return {x, y: y}
 }
 
 /**
@@ -309,13 +322,15 @@ const clearCanvas = () => {
   let width = canvas.value.width;
   let height = canvas.value.height;
   ctx.clearRect(0, 0, width, height)
-  ctx.clearRect(-width / 2, -height / 2, width, height)
 }
 
 // 渲染元素
 const renderAllElements = () => {
   clearCanvas()
-  allElements.forEach((element) => element.render())
+  // allElements.forEach((element) => element.render())
+  for (let i = 0; i < allElements.length; i++) {
+    allElements[i].render()
+  }
 }
 
 // 检查是否选中某个元素
@@ -340,10 +355,6 @@ const checkIsHitElement = (x, y) => {
   renderAllElements()
 }
 
-// 检查一个坐标是否在一个矩阵内
-const checkPointIsInRectangle = (x, y, rx, ry, rw, rh) => {
-  return x => rx && x <= rx + rw && y >= ry && y <= ry + rh;
-}
 
 // 模拟交互存储
 let key = "allElement"
@@ -437,6 +448,26 @@ const adddrawingBoard = () => {
   drawingBoardList[drawingBoardIndex.value] = []
 
   allElements = []
+  renderAllElements()
+}
+
+const undo = () => {
+  if (!allElements.length) {
+    return
+  }
+
+  cacheListIndex -= 1
+  let element = allElements.pop()
+  cacheList.unshift(element)
+
+  renderAllElements()
+}
+const redo = () => {
+  if (!cacheList.length) {
+    return
+  }
+  let element = cacheList.shift()
+  allElements.push(element)
   renderAllElements()
 }
 
