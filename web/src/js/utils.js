@@ -71,3 +71,7 @@ export const checkPointIsInRectangle = (startPoint, endPoint, mousePoint) => {
     return mousePoint.x >= startPoint.x && mousePoint.y >= startPoint.y &&
         mousePoint.x <= endPoint.x && mousePoint.y <= endPoint.y
 }
+// 屏幕坐标转到画布坐标
+export const screenToCanvas = (x, y) => {
+    return {x, y: y}
+}

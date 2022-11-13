@@ -7,6 +7,8 @@
         <el-radio-group v-model="currentType">
           <el-radio-button label="selection">选择</el-radio-button>
           <el-radio-button label="rectangle">矩形</el-radio-button>
+          <el-radio-button label="line">线</el-radio-button>
+          <el-radio-button label="circle">圆</el-radio-button>
         </el-radio-group>
       </el-row>
     </div>
@@ -78,10 +80,10 @@
 <script setup>
 import {onMounted, onUpdated, ref} from "vue";
 import {DeleteFilled, CaretLeft, CaretRight, Plus} from "@element-plus/icons-vue"
-
-import {getPointToLineDistance, getTowPointDistance, checkIsAtSegment, checkPointIsInRectangle} from "../../js/utils.js";
-
+import {Rectangle} from "./Rectangle.js";
 import {loadInStore, saveToStorage} from "../../js/data.js";
+import {Line} from "./Line.js";
+import {Circle} from "./Circle.js";
 
 const container = ref(null)
 const canvas = ref(null)
@@ -136,25 +138,25 @@ const onmousedown = (e) => {
   mouseDown.y = e.offsetY
   isMouseDown.value = true
 
-  if (currentType.value === "selection") {
-    // 选择模式下进行元素激活检测
-    if (activeElement) {
-      // 当前存在激活元素则判断是否按住了激活状态的某个区域
-      let hitActiveArea = activeElement.isHitActiveArea(mouseDown.x, mouseDown.y);
-      console.log(hitActiveArea)
-      if (hitActiveArea) {
-        // 按住了按住了激活状态的某个区域
-        isAdjustmentElement = true;
-        hitActiveElementArea = hitActiveArea;
-        alert(hitActiveArea);
-      } else {
-        // 否则进行激活元素的更新操作
-        checkIsHitElement(mouseDown.x, mouseDown.y);
-      }
-    } else {
-      checkIsHitElement(mouseDown.x, mouseDown.y);
-    }
-  }
+  // if (currentType.value === "selection") {
+  //   // 选择模式下进行元素激活检测
+  //   if (activeElement) {
+  //     // 当前存在激活元素则判断是否按住了激活状态的某个区域
+  //     let hitActiveArea = activeElement.isHitActiveArea(mouseDown.x, mouseDown.y);
+  //     console.log(hitActiveArea)
+  //     if (hitActiveArea) {
+  //       // 按住了按住了激活状态的某个区域
+  //       isAdjustmentElement = true;
+  //       hitActiveElementArea = hitActiveArea;
+  //       alert(hitActiveArea);
+  //     } else {
+  //       // 否则进行激活元素的更新操作
+  //       checkIsHitElement(mouseDown.x, mouseDown.y);
+  //     }
+  //   } else {
+  //     checkIsHitElement(mouseDown.x, mouseDown.y);
+  //   }
+  // }
 };
 
 const onmouseup = (e) => {
@@ -171,11 +173,21 @@ const onmousemove = (e) => {
     return;
   }
   if (!activeElement) {
-    activeElement = new Rectangle({
-      x: mouseDown.x,
-      y: mouseDown.y,
-    })
+    switch (currentType.value) {
+      case 'line':
+        activeElement = new Line({x: mouseDown.x, y: mouseDown.y}, {canvas, ctx})
+        break;
+      case 'rectangle':
+        activeElement = new Rectangle({x: mouseDown.x, y: mouseDown.y}, {canvas, ctx})
+        break;
+      case 'circle':
+        activeElement = new Circle({x: mouseDown.x, y: mouseDown.y}, {canvas, ctx})
+        break;
+      default:
+        break;
+    }
     // 添加到元素渲染数组
+    console.log(`push`)
     allElements.push(activeElement)
   }
   // 更改矩阵的大小
@@ -186,134 +198,6 @@ const onmousemove = (e) => {
   // testSaveData()
 }
 
-// 矩阵
-class Rectangle {
-
-  constructor(opt) {
-    this.x = opt.x || 0
-    this.y = opt.y || 0
-    this.width = opt.width || 0
-    this.height = opt.height || 0
-    this.isActive = false
-  }
-
-  /**
-   * 渲染
-   */
-  render() {
-    // ctx.beginPath();
-    ctx.save()
-    let canvasPos = screenToCanvas(this.x, this.y)
-    ctx.rect(canvasPos.x, canvasPos.y, this.width, this.height)
-    drawRect(canvasPos.x, canvasPos.y, this.width, this.height)
-    this.renderActiveState()
-    // ctx.stroke()
-  }
-
-  /**
-   * 渲染选中框
-   */
-  renderActiveState() {
-    if (!this.isActive) {
-      return;
-    }
-    let canvasPos = screenToCanvas(this.x, this.y);
-    // 选中框应当比矩阵大一些
-    let x = canvasPos.x - 5;
-    let y = canvasPos.y - 5;
-    let width = this.width + 10;
-    let height = this.height + 10;
-
-    ctx.save();
-    ctx.setLineDash([5])
-    drawRect(x, y, width, height)
-    ctx.restore()
-    drawRect(x - 10, y - 10, 10, 10)// 左上角操作图标
-    drawRect(x + width, y - 10, 10, 10)// 右上角操作图标
-    drawRect(x + width, y + height, 10, 10)// 左下角操作图标
-    drawRect(x - 10, y + height, 10, 10)// 右下角操作图标
-    drawCircle(x + width / 2, y - 10, 10)// 旋转操作图标
-  }
-
-  /**
-   * 是否选中
-   * @param x0
-   * @param y0
-   * @return {boolean}
-   */
-  isHit(x0, y0) {
-    let {x, y, width, height} = this;
-    let segments = [
-      [x, y, x + width, y],
-      [x + width, y, x + width, y + height],
-      [x + width, y + height, x, y + height],
-      [x, y + height, x, y],
-    ]
-    for (let i = 0; i < segments.length; i++) {
-      let segment = segments[i];
-      if (checkIsAtSegment(x0, y0, segment[0], segment[1], segment[2], segment[3])) {
-        return true;
-      }
-    }
-    return false
-  }
-
-  /**
-   * 是否选中了 激活状态 的某个区域
-   * @param x0
-   * @param y0
-   * @return {string}
-   */
-  isHitActiveArea(x0, y0) {
-    let x = this.x - 5;
-    let y = this.y - 5;
-    let width = this.width + 10;
-    let height = this.height + 10;
-
-    let leftTopPoint = {x: x, y: y,}
-    let rightBottomPoint = {x: x + width, y: y + height,}
-    let mousePoint = {x: x0, y: y0}
-
-    if (checkPointIsInRectangle(leftTopPoint, rightBottomPoint, mousePoint)) {
-      // 在中间的虚线框
-      return "body";
-    } else if (getTowPointDistance(x0, y0, x + width / 2, y + 6) <= 15) {
-      // 在旋转手柄
-      return "rotate";
-    } else if (checkPointIsInRectangle(rightBottomPoint, {x: rightBottomPoint.x + 10, y: rightBottomPoint.y + 10}, mousePoint)) {
-      // 在右下角操作手柄
-      return "rightBottom";
-    } else if (checkPointIsInRectangle({x: rightBottomPoint.x, y: leftTopPoint.y}, {x: rightBottomPoint.x + 10, y: leftTopPoint.y + 10}, mousePoint)) {
-      // 在右上角操作手柄
-      return "rightTop";
-    } else if (checkPointIsInRectangle({x: leftTopPoint.x - 10, y: leftTopPoint.y - 10}, leftTopPoint, mousePoint)) {
-      // 在左上角操作手柄
-      return "leftTop";
-    } else if (checkPointIsInRectangle({x: leftTopPoint.x - 10, y: rightBottomPoint.y}, {x: leftTopPoint.x + 10, y: rightBottomPoint.y + 10}, mousePoint)) {
-      // 在左下角操作手柄
-      return "leftBottom";
-    }
-  }
-}
-
-// 绘制矩形
-const drawRect = (x, y, w, h) => {
-  ctx.beginPath();
-  ctx.rect(x, y, w, h);
-  ctx.stroke();
-};
-
-// 绘制圆形
-const drawCircle = (x, y, r) => {
-  ctx.beginPath();
-  ctx.arc(x, y, r, 0, 2 * Math.PI);
-  ctx.stroke();
-};
-
-// 屏幕坐标转到画布坐标
-const screenToCanvas = (x, y) => {
-  return {x, y: y}
-}
 
 /**
  * 清除画布
@@ -366,7 +250,7 @@ const testSaveData = () => {
 const testLoadData = () => {
   allElements = JSON.parse(JSON.parse(JSON.stringify(loadInStore(key))))
   for (let i = 0; i < allElements.length; i++) {
-    allElements[i] = new Rectangle(allElements[i])
+    allElements[i] = new Rectangle(allElements[i], {canvas, ctx})
   }
   renderAllElements()
 }
