@@ -33,6 +33,14 @@ export const constantRoutes = [
         path: '/classroom1',
         component: ()=>import('../views/classroom/whiteboard.vue'),
     },
+    {
+        path: '/login',
+        component: ()=>import('../views/login.vue'),
+    },
+    {
+        path: '/registered',
+        component: ()=>import('../views/registered.vue'),
+    },
 ]
 
 const router = createRouter({
