@@ -1,3 +1,5 @@
+import * as App from "../../../utils/App.js";
+
 export class Circle {
 
     constructor(opt, app) {
@@ -7,11 +9,10 @@ export class Circle {
         this.height = opt.height || 0
         this.lineWidth = opt.lineWidth || 2
         this.strokeStyle = opt.strokeStyle || '#000'
-        this.app = app
     }
 
     render() {
-        let ctx = this.app.ctx
+        let ctx = App.ctx
         ctx.beginPath();
         ctx.arc(this.x, this.y, Math.abs(this.width), 0, 2 * Math.PI);
         ctx.stroke();

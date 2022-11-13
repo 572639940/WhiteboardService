@@ -1,9 +1,10 @@
+import * as App from "../../../utils/App.js";
+
 export class Brush {
 
     constructor(opt, app) {
         this.x = opt.x || []
         this.y = opt.y || []
-        this.app = app
         this.type = 'brush'
     }
 
@@ -13,7 +14,7 @@ export class Brush {
     }
 
     render() {
-        let ctx = this.app.ctx
+        let ctx = App.ctx
         ctx.lineCap = "round";
         ctx.lineJoin = "round";
         ctx.beginPath()

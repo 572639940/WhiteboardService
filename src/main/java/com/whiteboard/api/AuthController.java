@@ -6,6 +6,7 @@ import com.whiteboard.service.IUserService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -31,7 +32,7 @@ public class AuthController {
 
     @ApiOperation(value = "登陆")
     @RequestMapping("/login")
-    public Map<String, Object> login(AuthUserForm authUserForm) throws BusinessException {
+    public Map<String, Object> login(@RequestBody AuthUserForm authUserForm) throws BusinessException {
         return userService.login(authUserForm.getUsername(), authUserForm.getPassword());
     }
 

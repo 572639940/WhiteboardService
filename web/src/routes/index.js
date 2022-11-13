@@ -1,45 +1,26 @@
-import { createWebHistory, createRouter } from 'vue-router'
+import {createWebHistory, createRouter} from 'vue-router'
 
 // 公共路由
 export const constantRoutes = [
-    // {
-    //     path: '/login',
-    //     component: () => import(''),
-    //     hidden: true
-    // },
-    // {
-    //     path: '/404',
-    //     component: () => import(''),
-    //     hidden: true
-    // },
-    // {
-    //     path: '/401',
-    //     component: () => import(''),
-    //     hidden: true
-    // },
-    // {
-    //     path: '/',
-    //     component: ()=>import('../App.vue'),
-    // },
     {
         path: '/',
-        component: ()=>import('../views/Home.vue'),
+        redirect: '/login',
+    },
+    {
+        path: '/home',
+        component: () => import('../views/Home.vue'),
     },
     {
         path: '/classroom',
-        component: ()=>import('../views/classroom/index.vue'),
-    },
-    {
-        path: '/classroom1',
-        component: ()=>import('../views/classroom/whiteboard.vue'),
+        component: () => import('../views/classroom/index.vue'),
     },
     {
         path: '/login',
-        component: ()=>import('../views/login.vue'),
+        component: () => import('../views/login.vue'),
     },
     {
         path: '/registered',
-        component: ()=>import('../views/registered.vue'),
+        component: () => import('../views/registered.vue'),
     },
 ]
 
@@ -50,7 +31,7 @@ const router = createRouter({
         if (savedPosition) {
             return savedPosition
         } else {
-            return { top: 0 }
+            return {top: 0}
         }
     },
 });

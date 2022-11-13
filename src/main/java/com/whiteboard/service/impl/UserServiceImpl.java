@@ -6,6 +6,7 @@ import com.whiteboard.config.JwtTokenUtil;
 import com.whiteboard.dao.UserMapper;
 import com.whiteboard.model.domain.UserDO;
 import com.whiteboard.service.IUserService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -15,6 +16,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 
+import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 import java.util.HashMap;
 import java.util.Map;
@@ -46,6 +48,15 @@ public class UserServiceImpl implements IUserService {
 
     @Value("${jwt.tokenHead}")
     private String tokenHead;
+
+    @PostConstruct
+    public void a(){
+        String encode = passwordEncoder.encode("123456");
+
+        UserDO userDO = userMapper.selectById(111);
+        userDO.setPassword(encode);
+        userMapper.updateById(userDO);
+    }
 
     @Override
     public UserDO getAdminByUsername(String username) {

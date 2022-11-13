@@ -58,7 +58,7 @@
 
 <script setup>
 import {onMounted, onUpdated, ref} from "vue";
-import Whiteboard from "./whiteboard.vue";
+import Whiteboard from "../../components/whiteboard/index.vue";
 import {Picture, PictureFilled} from '@element-plus/icons-vue'
 
 const handleSelect = (key, keyPath) => {

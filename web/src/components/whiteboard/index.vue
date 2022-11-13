@@ -3,34 +3,25 @@
     <canvas id="canvas" ref="canvas">
     </canvas>
     <div class="toolbar" v-if="!isMouseDown">
-      <el-row>
-        <el-col :>
-
+      <el-row :gutter="1">
+        <el-col :span="6">
+          <el-radio-group v-model="currentType">
+            <el-radio-button label="selection">选择</el-radio-button>
+            <el-radio-button label="rectangle">矩形</el-radio-button>
+            <el-radio-button label="line">线</el-radio-button>
+            <el-radio-button label="circle">圆</el-radio-button>
+            <el-radio-button label="brush">画笔</el-radio-button>
+          </el-radio-group>
         </el-col>
-        <el-radio-group v-model="currentType">
-          <el-radio-button label="selection">选择</el-radio-button>
-          <el-radio-button label="rectangle">矩形</el-radio-button>
-          <el-radio-button label="line">线</el-radio-button>
-          <el-radio-button label="circle">圆</el-radio-button>
-          <el-radio-button label="brush">画笔</el-radio-button>
-        </el-radio-group>
-        <el-button @click="testSaveData">save</el-button>
-        <el-button @click="testLoadData">load</el-button>
-        <el-button @click="undo">undo</el-button>
-        <el-button @click="redo">redo</el-button>
-        <el-button circle :icon="DeleteFilled" size="small" @click="setEmptyCanvas"/>
+        <el-col :span="6">
+          <el-button @click="testSaveData">存档</el-button>
+          <el-button @click="testLoadData">读档</el-button>
+          <el-button @click="undo">撤回</el-button>
+          <el-button @click="redo">重做</el-button>
+          <el-button circle :icon="DeleteFilled" size="small" @click="setEmptyCanvas"/>
+        </el-col>
       </el-row>
     </div>
-    <!-- todo 修改样式时显示 -->
-<!--    <el-card class="element-style" v-if="!isMouseDown">-->
-<!--      <el-row>-->
-<!--        <el-button @click="testSaveData">save</el-button>-->
-<!--        <el-button @click="testLoadData">load</el-button>-->
-<!--        <el-button @click="undo">undo</el-button>-->
-<!--        <el-button @click="redo">redo</el-button>-->
-<!--        <el-button circle :icon="DeleteFilled" size="small" @click="setEmptyCanvas"/>-->
-<!--      </el-row>-->
-<!--    </el-card>-->
     <div class="canvas-page" v-if="!isMouseDown">
       <el-icon>
         <el-tooltip
@@ -90,10 +81,11 @@
 import {onMounted, onUpdated, ref} from "vue";
 import {DeleteFilled, CaretLeft, CaretRight, Plus} from "@element-plus/icons-vue"
 import {Rectangle} from "./elements/Rectangle.js";
-import {loadInStore, saveToStorage} from "../../js/data.js";
+import {loadInStore, saveToStorage} from "../../utils/data.js";
 import {Line} from "./elements/Line.js";
 import {Circle} from "./elements/Circle.js";
 import {Brush} from "./elements/Brush.js";
+import {setCanvas} from "../../utils/App.js";
 
 const container = ref(null)
 const canvas = ref(null)
@@ -127,6 +119,8 @@ const initCanvas = () => {
   canvas.value.width = width
   canvas.value.height = height
   ctx = canvas.value.getContext('2d')
+
+  setCanvas({canvas, ctx})
 }
 
 /**
@@ -355,6 +349,7 @@ const redo = () => {
 
 // 选择工具栏
 .toolbar {
+  width: 100%;
   position: absolute;
 
   bottom: 70px;
