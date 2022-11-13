@@ -1,13 +1,16 @@
+const websocket = new WebSocket("ws://localhost:8080/chat")
+
 export const saveToStorage = (key, data) => {
     localStorage.setItem(key, data)
-    // console.debug(`数据已保存`)
-    // console.debug(JSON.stringify(data))
+    // websocket.send(data)
 }
 
 export const loadInStore = (key) => {
-    let data = localStorage.getItem(key)
-    // console.debug(`读取到数据`)
-    // console.debug(JSON.stringify(data))
-    // console.debug(JSON.parse(JSON.parse(JSON.stringify(data))))
+    let data;
+    data = localStorage.getItem(key)
+    // websocket.addEventListener('message', (event) => {
+    //     console.log('Message from server ', event.data);
+    //     data = event.data
+    // });
     return data
 }

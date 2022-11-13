@@ -4,24 +4,33 @@
     </canvas>
     <div class="toolbar" v-if="!isMouseDown">
       <el-row>
+        <el-col :>
+
+        </el-col>
         <el-radio-group v-model="currentType">
           <el-radio-button label="selection">选择</el-radio-button>
           <el-radio-button label="rectangle">矩形</el-radio-button>
           <el-radio-button label="line">线</el-radio-button>
           <el-radio-button label="circle">圆</el-radio-button>
+          <el-radio-button label="brush">画笔</el-radio-button>
         </el-radio-group>
-      </el-row>
-    </div>
-    <!-- todo 修改样式时显示 -->
-    <el-card class="element-style" v-if="!isMouseDown">
-      <el-row>
         <el-button @click="testSaveData">save</el-button>
         <el-button @click="testLoadData">load</el-button>
         <el-button @click="undo">undo</el-button>
         <el-button @click="redo">redo</el-button>
-        <el-button circle :icon="DeleteFilled" size="small" @click="clearCanvas"/>
+        <el-button circle :icon="DeleteFilled" size="small" @click="setEmptyCanvas"/>
       </el-row>
-    </el-card>
+    </div>
+    <!-- todo 修改样式时显示 -->
+<!--    <el-card class="element-style" v-if="!isMouseDown">-->
+<!--      <el-row>-->
+<!--        <el-button @click="testSaveData">save</el-button>-->
+<!--        <el-button @click="testLoadData">load</el-button>-->
+<!--        <el-button @click="undo">undo</el-button>-->
+<!--        <el-button @click="redo">redo</el-button>-->
+<!--        <el-button circle :icon="DeleteFilled" size="small" @click="setEmptyCanvas"/>-->
+<!--      </el-row>-->
+<!--    </el-card>-->
     <div class="canvas-page" v-if="!isMouseDown">
       <el-icon>
         <el-tooltip
@@ -80,10 +89,11 @@
 <script setup>
 import {onMounted, onUpdated, ref} from "vue";
 import {DeleteFilled, CaretLeft, CaretRight, Plus} from "@element-plus/icons-vue"
-import {Rectangle} from "./Rectangle.js";
+import {Rectangle} from "./elements/Rectangle.js";
 import {loadInStore, saveToStorage} from "../../js/data.js";
-import {Line} from "./Line.js";
-import {Circle} from "./Circle.js";
+import {Line} from "./elements/Line.js";
+import {Circle} from "./elements/Circle.js";
+import {Brush} from "./elements/Brush.js";
 
 const container = ref(null)
 const canvas = ref(null)
@@ -100,13 +110,13 @@ let allElements = []// 所有元素
 // 元素缓存列表
 let cacheList = []
 let cacheListIndex = -1//当前绘图元素索引
-
-let isAdjustmentElement = false // 是否在调整区域
-let hitActiveElementArea = "" // 当前激活的区域
+// 当前模式: 只读(0) 协作(1)
+let currentModel = 1
 
 onMounted(() => {
   initCanvas()
   bindEvent()
+  testLoadData()
 })
 
 /**
@@ -137,26 +147,6 @@ const onmousedown = (e) => {
   mouseDown.x = e.offsetX
   mouseDown.y = e.offsetY
   isMouseDown.value = true
-
-  // if (currentType.value === "selection") {
-  //   // 选择模式下进行元素激活检测
-  //   if (activeElement) {
-  //     // 当前存在激活元素则判断是否按住了激活状态的某个区域
-  //     let hitActiveArea = activeElement.isHitActiveArea(mouseDown.x, mouseDown.y);
-  //     console.log(hitActiveArea)
-  //     if (hitActiveArea) {
-  //       // 按住了按住了激活状态的某个区域
-  //       isAdjustmentElement = true;
-  //       hitActiveElementArea = hitActiveArea;
-  //       alert(hitActiveArea);
-  //     } else {
-  //       // 否则进行激活元素的更新操作
-  //       checkIsHitElement(mouseDown.x, mouseDown.y);
-  //     }
-  //   } else {
-  //     checkIsHitElement(mouseDown.x, mouseDown.y);
-  //   }
-  // }
 };
 
 const onmouseup = (e) => {
@@ -165,13 +155,16 @@ const onmouseup = (e) => {
     activeElement = null
   }
   mouseDown.x = {x: 0, y: 0}
+
+  testSaveData()
 }
 
 const onmousemove = (e) => {
   // 可以绘制, 且不是选中
-  if (!isMouseDown.value || currentType.value === 'selection') {
+  if (!isMouseDown.value || currentType.value === 'selection' || currentModel === 0) {
     return;
   }
+  // 当前没有激活元素则创建一个
   if (!activeElement) {
     switch (currentType.value) {
       case 'line':
@@ -183,21 +176,32 @@ const onmousemove = (e) => {
       case 'circle':
         activeElement = new Circle({x: mouseDown.x, y: mouseDown.y}, {canvas, ctx})
         break;
+      case 'brush':
+        activeElement = new Brush({x: [mouseDown.x], y: [mouseDown.y]}, {canvas, ctx})
+        break;
       default:
         break;
     }
     // 添加到元素渲染数组
-    console.log(`push`)
     allElements.push(activeElement)
   }
-  // 更改矩阵的大小
-  activeElement.width = e.offsetX - mouseDown.x
-  activeElement.height = e.offsetY - mouseDown.y
+  // 修改元素大小
+  if (activeElement.type === 'brush') {
+    activeElement.addCoordinate(e.offsetX, e.offsetY)
+  } else {
+    activeElement.width = e.offsetX - mouseDown.x
+    activeElement.height = e.offsetY - mouseDown.y
+  }
   // 渲染所有的元素
   renderAllElements()
-  // testSaveData()
 }
 
+const setEmptyCanvas = () => {
+  allElements = []
+  clearCanvas()
+  testSaveData()
+  renderAllElements()
+}
 
 /**
  * 清除画布
@@ -211,34 +215,10 @@ const clearCanvas = () => {
 // 渲染元素
 const renderAllElements = () => {
   clearCanvas()
-  // allElements.forEach((element) => element.render())
   for (let i = 0; i < allElements.length; i++) {
     allElements[i].render()
   }
 }
-
-// 检查是否选中某个元素
-const checkIsHitElement = (x, y) => {
-  let hitElement = null
-  for (let i = allElements.length - 1; i >= 0; i--) {
-    if (allElements[i].isHit(x, y)) {
-      hitElement = allElements[i]
-      break;
-    }
-  }
-  // 如果当前已经有激活元素先取消
-  if (activeElement) {
-    activeElement.isActive = false
-  }
-  // 更改为当前选中元素
-  activeElement = hitElement
-  if (hitElement) {
-    hitElement.isActive = true
-  }
-  // 重新渲染元素
-  renderAllElements()
-}
-
 
 // 模拟交互存储
 let key = "allElement"
@@ -248,11 +228,14 @@ const testSaveData = () => {
 }
 
 const testLoadData = () => {
-  allElements = JSON.parse(JSON.parse(JSON.stringify(loadInStore(key))))
-  for (let i = 0; i < allElements.length; i++) {
-    allElements[i] = new Rectangle(allElements[i], {canvas, ctx})
+  let data = loadInStore(key)
+  if (data) {
+    allElements = JSON.parse(JSON.parse(JSON.stringify(data)))
+    for (let i = 0; i < allElements.length; i++) {
+      allElements[i] = new Rectangle(allElements[i], {canvas, ctx})
+    }
+    renderAllElements()
   }
-  renderAllElements()
 }
 
 // 画布相关

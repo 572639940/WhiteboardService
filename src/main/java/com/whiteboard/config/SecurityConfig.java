@@ -55,6 +55,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 "/index.html",
                 "favicon.ico",
                 "/doc.html",
+                "/chat",
                 "/webjars/**",
                 "/swagger-resources/**",
                 "/v2/api-docs/**",

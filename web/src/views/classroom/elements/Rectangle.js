@@ -1,4 +1,4 @@
-import {getPointToLineDistance, getTowPointDistance, checkIsAtSegment, checkPointIsInRectangle, screenToCanvas} from "../../js/utils.js";
+import {getPointToLineDistance, getTowPointDistance, checkIsAtSegment, checkPointIsInRectangle, screenToCanvas} from "../../../js/utils.js";
 
 export class Rectangle {
 
